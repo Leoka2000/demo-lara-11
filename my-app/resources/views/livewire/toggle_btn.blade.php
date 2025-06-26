@@ -10,12 +10,93 @@ use App\Events\SwitchFlipped;
 new class extends Component {
      public $toggleSwitch = false;
 
+    #[Locked]
+    public $activeUsersCount = 0;
+
+    #[Locked]
+    public $userId;
+
+    #[Locked]
+    public $userColors = [];
+
+    #[Locked]
+    public $mousePositions = [];
+
+
+       public function updateActiveUsersCount()
+    {
+        $this->activeUsersCount = count($this->mousePositions) + 1;
+    }
+
+    public function generateRandomColor()
+    {
+        return '#' . str_pad(dechex(mt_rand(0, 0xffffff)), 6, '0', STR_PAD_LEFT);
+    }
+
+    public function mount()
+    {
+        if (!Session::has('user_id')) {
+            $this->userId = uniqid('user_', true);
+            Session::put('user_id', $this->userId);
+        } else {
+            $this->userId = Session::get('user_id');
+        }
+        $this->toggleSwitch = Cache::get('toggleSwitch', false);
+        $this->userColors[$this->userId] = $this->generateRandomColor();
+        $this->updateActiveUsersCount();
+    }
+
     public function flipSwitch()
     {
         Cache::forever('toggleSwitch', $this->toggleSwitch);
         broadcast(new SwitchFlipped($this->toggleSwitch))->toOthers();
     }
 
+    #[On('echo:switch,SwitchFlipped')]
+    public function registerSwitchFlipped($payload)
+    {
+        $this->toggleSwitch = $payload['toggleSwitch'];
+        Cache::forever('toggleSwitch', $this->toggleSwitch);
+    }
+
+    #[On('echo:mouse-movement,MouseMoved')]
+    public function registerMouseMoved($payload)
+    {
+        if ($payload['position'] !== null) {
+            $this->mousePositions[$payload['userId']] = $payload['position'];
+            if (!isset($this->userColors[$payload['userId']])) {
+                $this->userColors[$payload['userId']] = $this->generateRandomColor();
+            }
+        } else {
+            unset($this->mousePositions[$payload['userId']]);
+        }
+
+        $this->updateActiveUsersCount();
+    }
+
+    public function moveMouse($position)
+    {
+        $payload = [
+            'userId' => $this->userId,
+            'position' => $position,
+            'color' => $this->userColors[$this->userId],
+        ];
+
+        broadcast(new MouseMoved($payload))->toOthers();
+    }
+
+    public function setInactive()
+    {
+        unset($this->mousePositions[$this->userId]);
+        $this->updateActiveUsersCount();
+        broadcast(
+            new MouseMoved([
+                'userId' => $this->userId,
+                'position' => null,
+                'color' => null,
+            ]),
+        )->toOthers();
+    }
 }; ?>
 
 <div x-data="{

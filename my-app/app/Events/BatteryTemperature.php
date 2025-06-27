@@ -25,7 +25,7 @@ class BatteryTemperature implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('battery.temperature'),
+            new Channel('battery.temperature'),
         ];
     }
 

@@ -7,24 +7,49 @@ new class extends Component {
 }; ?>
 
 <div>
-    <div id=chart class="=" h-full w-96"></div>
+    <div id=chart_battery class="h-full flex items-center justify-between  w-full"></div>
 
 
     <script>
         var options = {
   chart: {
-    type: 'line'
+    height: 200,
+    type: "radialBar"
   },
-  series: [{
-    name: 'sales',
-    data: [30,40,35,50,49,60,70,91,125]
-  }],
-  xaxis: {
-    categories: [1991,1992,1993,1994,1995,1996,1997, 1998,1999]
-  }
-}
 
-var chart = new ApexCharts(document.querySelector("#chart"), options);
+  series: [72],
+
+  plotOptions: {
+    radialBar: {
+      hollow: {
+        margin: 20,
+        size: "60%"
+      },
+
+      dataLabels: {
+        showOn: "always",
+        name: {
+          offsetY: -10,
+          show: true,
+          color: "#888",
+          fontSize: "13px"
+        },
+        value: {
+          color: "#111",
+          fontSize: "30px",
+          show: true
+        }
+      }
+    }
+  },
+
+  stroke: {
+    lineCap: "round",
+  },
+  labels: ["Batery level"]
+};
+
+var chart = new ApexCharts(document.querySelector("#chart_battery"), options);
 
 chart.render();
     </script>

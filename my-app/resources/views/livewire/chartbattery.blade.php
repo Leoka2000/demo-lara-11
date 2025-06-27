@@ -7,9 +7,7 @@ new class extends Component {
 }; ?>
 
 <div>
-    <div id=chart_battery class="h-full flex items-center justify-between  w-full"></div>
-
-
+    <div id=chart_battery class="h-full flex items-center justify-between w-full"></div>
     <script>
         var options = {
   chart: {

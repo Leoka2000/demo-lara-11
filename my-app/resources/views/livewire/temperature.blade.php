@@ -8,7 +8,7 @@ use Livewire\Attributes\On;
 new class extends Component {
      public int $temperature = 25;
 
-    #[On('echo:private-battery.temperature,BatteryTemperature')]
+   #[On('echo:battery.temperature,BatteryTemperature')]
     public function updateTemperature($event)
     {
         $this->temperature = $event['temperature'];

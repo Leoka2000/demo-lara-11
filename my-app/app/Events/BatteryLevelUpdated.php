@@ -14,27 +14,25 @@ class BatteryLevelUpdated implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $level;
+    public int $chargeLevel;
 
-    public function __construct($level)
+    public function __construct(int $chargeLevel)
     {
-        $this->level = $level;
+        $this->chargeLevel = $chargeLevel;
     }
 
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return array<int, \Illuminate\Broadcasting\Channel>
-     */
+
     public function broadcastOn(): array
     {
         return [
-            new Channel('battery.level'),
+            new Channel('battery.chargeLevel'),
         ];
     }
 
-    public function broadcastAs()
+    public function broadcastWith(): array
     {
-        return 'level.updated';
+        return [
+            'chargeLevel' => $this->chargeLevel,
+        ];
     }
 }

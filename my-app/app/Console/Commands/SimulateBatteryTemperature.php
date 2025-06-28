@@ -28,7 +28,7 @@ class SimulateBatteryTemperature extends Command
             $this->info("Temperature sent: $temperature");
 
             $temperature += 2;
-            sleep(5);
+            sleep(5); //fix later
         }
 
         return Command::SUCCESS;

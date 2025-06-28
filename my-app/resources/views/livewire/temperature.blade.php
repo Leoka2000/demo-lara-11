@@ -1,24 +1,23 @@
 <?php
 
 use Livewire\Volt\Component;
-
 use Livewire\Attributes\On;
 
-
 new class extends Component {
-     public int $temperature = 25;
+    public int $temperature = 25;
 
-   #[On('echo:battery.temperature,BatteryTemperature')]
+    #[On('echo:battery.temperature,BatteryTemperature')]
     public function updateTemperature($event)
     {
         $this->temperature = $event['temperature'];
     }
-}; ?>
+};
+?>
 
 <div>
     <div>
         <div id="chart-temperature" wire:ignore></div>
-        <span id="temp-value">{{ $temperature }}</span>°C</h1>
+        <span id="temp-value" style="display: none;">{{ $temperature }}</span>
     </div>
 </div>
 
@@ -32,11 +31,40 @@ new class extends Component {
 
     const chartOptions = {
         chart: {
-            height: 210,
-            type: 'radialBar',
+            height: 200,
+            type: "radialBar"
         },
+
         series: [getInitialTemp()],
-        labels: ['Battery Temp'],
+
+        plotOptions: {
+            radialBar: {
+                hollow: {
+                    margin: 15,
+                    size: "70%"
+                },
+                dataLabels: {
+                    showOn: "always",
+                    name: {
+                        offsetY: -10,
+                        show: true,
+                        color: "#888",
+                        fontSize: "13px"
+                    },
+                    value: {
+                        color: "#111",
+                        fontSize: "30px",
+                        show: true
+                    }
+                }
+            }
+        },
+
+        stroke: {
+            lineCap: "round",
+        },
+
+        labels: ["Battery Temp"]
     };
 
     const chart = new ApexCharts(document.querySelector("#chart-temperature"), chartOptions);
@@ -52,5 +80,5 @@ new class extends Component {
             chart.updateSeries([newTemp]);
             lastTemp = newTemp;
         }
-    }, 200);
+    }, 100);
 </script>

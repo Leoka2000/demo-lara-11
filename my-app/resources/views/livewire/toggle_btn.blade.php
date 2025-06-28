@@ -113,9 +113,4 @@ new class extends Component {
             </div>
         </div>
     </label>
-
-
-
-
-
 </div>

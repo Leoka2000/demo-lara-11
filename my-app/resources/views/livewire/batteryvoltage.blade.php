@@ -8,7 +8,7 @@ new class extends Component {
 ?>
 
 <div wire:ignore>
-    <div id="battery_voltage" class="rounded-2xl shadow p-4 bg-white"></div>
+    <div id="battery_voltage" class=""></div>
 </div>
 
 
@@ -19,7 +19,7 @@ new class extends Component {
         const chartEl = document.querySelector("#battery_voltage");
 
         const voltageChartOptions = {
-            series: [0],
+            series: [50],
             chart: {
                 height: 210,
                 type: 'radialBar',

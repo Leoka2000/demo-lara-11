@@ -68,6 +68,7 @@ new class extends Component {
 
         // Reverb listener: channel 'battery.voltage'
         window.Echo.channel('battery.voltage')
+
             .listen('.App\\Events\\BatteryVoltage', (e) => {
                 if (e.voltage !== undefined) {
                     chartVoltage.updateSeries([e.voltage]);

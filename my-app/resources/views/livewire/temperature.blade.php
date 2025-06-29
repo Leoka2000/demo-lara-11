@@ -64,7 +64,7 @@ new class extends Component {
             lineCap: "round",
         },
 
-        labels: ["Battery Temp"]
+        labels: ["Temperture °C" ]
     };
 
     const chart = new ApexCharts(document.querySelector("#chart-temperature"), chartOptions);

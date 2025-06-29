@@ -11,86 +11,99 @@ new class extends Component {
     <div id="historical_data" class="h-[350px]"></div>
 </div>
 
-
-
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const historicalDataOptions = {
-            series: [{
-                name: "Temperature",
-                data: [45, 52, 38, 24, 33, 26, 21, 20, 6, 8, 15, 10]
-            }, {
-                name: "Voltage",
-                data: [35, 41, 62, 42, 13, 18, 29, 37, 36, 51, 32, 35]
-            }, {
-                name: "Baterry charge",
-                data: [87, 57, 74, 99, 75, 38, 62, 47, 82, 56, 45, 47]
-            }],
+        const maxPoints = 20;
+
+        const chartData = {
+            temperature: [45, 52, 38, 24, 33, 26, 21, 20, 6, 8, 15, 10],
+            voltage: [3.5, 4.1, 4.2, 3.8, 3.9, 3.6, 4.0, 3.7, 3.4, 3.9, 3.8, 4.0],
+            charge: [87, 57, 74, 99, 75, 38, 62, 47, 82, 56, 45, 47]
+        };
+
+        const historicalDataChart = new ApexCharts(document.querySelector("#historical_data"), {
+            series: [
+                { name: "Temperature", data: [...chartData.temperature] },
+                { name: "Voltage", data: [...chartData.voltage] },
+                { name: "Battery charge", data: [...chartData.charge] }
+            ],
             chart: {
                 height: 350,
                 type: 'line',
                 zoom: { enabled: false }
             },
-            dataLabels: {
-                enabled: false
-            },
+            dataLabels: { enabled: false },
             stroke: {
                 width: [5, 7, 5],
                 curve: 'straight',
                 dashArray: [0, 8, 5]
             },
-            title: {
-                text: 'Historical Data',
-                align: 'left'
-            },
+            title: { text: 'Historical Data', align: 'left' },
             legend: {
                 tooltipHoverFormatter: function (val, opts) {
-                    return val + ' - <strong>' + opts.w.globals.series[opts.seriesIndex][opts.dataPointIndex] + '</strong>';
+                    return val + ' - <strong>' +
+                        opts.w.globals.series[opts.seriesIndex][opts.dataPointIndex] + '</strong>';
                 }
             },
             markers: {
                 size: 0,
-                hover: {
-                    sizeOffset: 6
-                }
+                hover: { sizeOffset: 6 }
             },
             xaxis: {
-                categories: [
-                    '01 Jan', '02 Jan', '03 Jan', '04 Jan', '05 Jan', '06 Jan',
-                    '07 Jan', '08 Jan', '09 Jan', '10 Jan', '11 Jan', '12 Jan'
-                ]
+                categories: Array.from({ length: chartData.temperature.length }, (_, i) => `T${i + 1}`)
             },
             tooltip: {
                 y: [
-                    {
-                        title: {
-                            formatter: function (val) {
-                                return val + " (mins)";
-                            }
-                        }
-                    },
-                    {
-                        title: {
-                            formatter: function (val) {
-                                return val + " per session";
-                            }
-                        }
-                    },
-                    {
-                        title: {
-                            formatter: function (val) {
-                                return val;
-                            }
-                        }
-                    }
+                    { title: { formatter: val => val + " °C" } },
+                    { title: { formatter: val => val + " V" } },
+                    { title: { formatter: val => val + "%" } }
                 ]
             },
-            grid: {
-                borderColor: '#f1f1f1'
-            }
-        };
+            grid: { borderColor: '#f1f1f1' }
+        });
 
-        const historicalDataChart = new ApexCharts(document.querySelector("#historical_data"), historicalDataOptions);
         historicalDataChart.render();
+
+        // Helper to keep only last N points
+        function pushAndTrim(array, value) {
+            array.push(value);
+            if (array.length > maxPoints) array.shift();
+            return array;
+        }
+
+        // === Laravel Echo Listeners ===
+        if (typeof Echo !== 'undefined') {
+            Echo.channel('battery.chargeLevel')
+                .listen('BatteryLevelUpdated', (e) => {
+                    chartData.charge = pushAndTrim(chartData.charge, e.chargeLevel);
+                    historicalDataChart.updateSeries([
+                        { name: "Temperature", data: chartData.temperature },
+                        { name: "Voltage", data: chartData.voltage },
+                        { name: "Battery charge", data: chartData.charge }
+                    ]);
+                });
+
+            Echo.channel('battery.voltage')
+                .listen('BatteryVoltage', (e) => {
+                    chartData.voltage = pushAndTrim(chartData.voltage, parseFloat(e.voltage));
+                    historicalDataChart.updateSeries([
+                        { name: "Temperature", data: chartData.temperature },
+                        { name: "Voltage", data: chartData.voltage },
+                        { name: "Battery charge", data: chartData.charge }
+                    ]);
+                });
+
+            Echo.channel('battery.temperature')
+                .listen('BatteryTemperature', (e) => {
+                    chartData.temperature = pushAndTrim(chartData.temperature, e.temperature);
+                    historicalDataChart.updateSeries([
+                        { name: "Temperature", data: chartData.temperature },
+                        { name: "Voltage", data: chartData.voltage },
+                        { name: "Battery charge", data: chartData.charge }
+                    ]);
+                });
+        } else {
+            console.warn("Laravel Echo is not available.");
+        }
     });
 </script>

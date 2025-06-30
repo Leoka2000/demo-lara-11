@@ -15,8 +15,12 @@ public function updateChargeLevel($event)
 ?>
 
 <div>
-    <div id="chart-battery-percentage" wire:ignore></div>
-    <span id="charge-value" style="display: none;">{{ $chargeLevel }}</span>
+    <div class="relative p-1">
+        <span
+            class="bg-yellow-100 absolute top-2 left-2 text-yellow-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-sm dark:bg-yellow-900 dark:text-yellow-300">Yellow</span>
+        <div id="chart-battery-percentage" wire:ignore></div>
+        <span id="charge-value" style="display: none;">{{ $chargeLevel }}</span>
+    </div>
 </div>
 
 <script>

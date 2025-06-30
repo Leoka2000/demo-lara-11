@@ -8,7 +8,11 @@ new class extends Component {
 ?>
 
 <div wire:ignore>
-    <div id="battery_voltage" class=""></div>
+    <div class="relative p-1">
+        <span
+            class="bg-yellow-100 absolute top-2 left-2 text-yellow-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-sm dark:bg-yellow-900 dark:text-yellow-300">Yellow</span>
+        <div id="battery_voltage" class=""></div>
+    </div>
 </div>
 
 
@@ -51,7 +55,7 @@ new class extends Component {
                         },
                         value: {
                             offsetY: 76,
-                        fontSize: '18px', // DENIFE FONT SIZE caralho
+                        fontSize: '15px', // DENIFE FONT SIZE caralho
                             color: undefined,
                             formatter: function (val) {
                                 return parseFloat(val).toFixed(2) + " Volts";

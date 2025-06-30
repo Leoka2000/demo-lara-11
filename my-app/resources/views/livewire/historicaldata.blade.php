@@ -8,7 +8,9 @@ new class extends Component {
 ?>
 
 <div wire:ignore>
-    <div id="historical_data"></div>
+    <div class="p-2">
+        <div id="historical_data"></div>
+    </div>
 </div>
 
 <script>
@@ -28,7 +30,7 @@ new class extends Component {
                 { name: "Battery charge", data: [...chartData.charge] }
             ],
             chart: {
-                height: 350,
+
                 type: 'line',
                 tools: {
             download: true,
@@ -46,7 +48,15 @@ new class extends Component {
                 curve: 'straight',
                 dashArray: [0, 8, 5]
             },
-            title: { text: 'Historical Data', align: 'left' },
+            title: {
+    text: 'Historical Data',
+    align: 'left',
+    style: {
+        color: '#374151', // <-- set your desired color here
+        fontSize: '16px',
+        fontWeight: 'thin'
+    }
+},
             legend: {
                 tooltipHoverFormatter: function (val, opts) {
                     return val + ' - <strong>' +

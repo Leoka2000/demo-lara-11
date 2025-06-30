@@ -19,25 +19,39 @@ new class extends Component {
         const chartEl = document.querySelector("#battery_voltage");
 
         const voltageChartOptions = {
-            series: [50],
+
+            series: [23],
             chart: {
                 height: 210,
                 type: 'radialBar',
-                offsetY: -10
+                offsetY: -10,
+                toolbar: {
+        show: true,
+        tools: {
+            download: true,
+            selection: true,
+            zoom: true,
+            zoomin: true,
+            zoomout: true,
+            pan: true,
+            reset: true,
+        }}
+
             },
+
             plotOptions: {
                 radialBar: {
                     startAngle: -135,
                     endAngle: 135,
                     dataLabels: {
                         name: {
-                            fontSize: '16px',
+                            fontSize: '15px',
                             color: undefined,
                             offsetY: 120
                         },
                         value: {
                             offsetY: 76,
-                            fontSize: '22px',
+                        fontSize: '18px', // DENIFE FONT SIZE caralho
                             color: undefined,
                             formatter: function (val) {
                                 return parseFloat(val).toFixed(2) + " Volts";
@@ -48,10 +62,12 @@ new class extends Component {
             },
             fill: {
                 type: 'gradient',
+                colors: ['#4ade80'],
                 gradient: {
                     shade: 'dark',
                     shadeIntensity: 0.15,
                     inverseColors: false,
+
                     opacityFrom: 1,
                     opacityTo: 1,
                     stops: [0, 50, 65, 91]

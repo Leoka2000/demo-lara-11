@@ -32,7 +32,19 @@ new class extends Component {
     const chartOptions = {
         chart: {
             height: 200,
-            type: "radialBar"
+            type: "radialBar",
+            toolbar: {
+        show: true,
+        tools: {
+            download: true,
+            selection: true,
+            zoom: true,
+            zoomin: true,
+            zoomout: true,
+            pan: true,
+            reset: true,
+        }}
+
         },
 
         series: [getInitialTemp()],
@@ -48,7 +60,7 @@ new class extends Component {
                     name: {
                         offsetY: -10,
                         show: true,
-                        color: "#888",
+                        color: "#4b5563",
                         fontSize: "13px"
                     },
                     value: {
@@ -59,7 +71,10 @@ new class extends Component {
                 }
             }
         },
-
+        fill: {
+            type: 'radialGradient',
+            colors: ['#f59e0b'] // <-- Set the solid amber color here
+        },
         stroke: {
             lineCap: "round",
         },

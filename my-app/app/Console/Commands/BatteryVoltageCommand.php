@@ -1,59 +1,50 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Events;
 
-use App\Events\BatteryVoltage;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Console\Command;
+use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Broadcasting\PresenceChannel;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
 
-class BatteryVoltageCommand extends Command
+class BatteryVoltage implements ShouldBroadcast
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'app:simulate-voltage';
+    use Dispatchable, InteractsWithSockets, SerializesModels;
+
+    public float $voltage;
 
     /**
-     * The console command description.
-     *
-     * @var string
+     * Create a new event instance.
      */
-    protected $description = 'Simulate battery voltage fluctuation and send to ThingSpeak and broadcast';
-
-    /**
-     * Execute the console command.
-     */
-    public function handle()
+    public function __construct(float $voltage)
     {
-        $voltage = 6.0; // Starting voltage
-        $minVoltage = 1.5;
-        $decrement = 0.1; // Smaller steps for voltage changes
+        $this->voltage = $voltage;
+    }
 
-        while ($voltage >= $minVoltage) {
-            // Send to ThingSpeak
-            $response = Http::get('https://api.thingspeak.com/update', [
-                'api_key' => 'XSFZL9M343SO37JF',
-                'field1' => $voltage,
-            ]);
+    /**
+     * Get the channels the event should broadcast on.
+     *
+     * @return array<int, \Illuminate\Broadcasting\Channel>
+     */
+    public function broadcastOn(): array
+    {
+        return [
+            new Channel('battery.voltage'),
+        ];
+    }
 
-            // Broadcast via Reverb
-            BatteryVoltage::dispatch($voltage);
-
-            $this->info("Voltage: {$voltage}V");
-
-            $voltage -= $decrement;
-
-            // Add some randomness
-            $voltage += (mt_rand(-10, 10) / 100); // Small
-
-            // Ensure voltage stays within bounds
-            $voltage = max($minVoltage, min(6.0, $voltage));
-
-            sleep(5); // Same interval as battery charge
-        }
-
-        return Command::SUCCESS;
+    /**
+     * Get the data to broadcast.
+     *
+     * @return array<string, float>
+     */
+    public function broadcastWith(): array
+    {
+        return [
+            'voltage' => $this->voltage,
+        ];
     }
 }

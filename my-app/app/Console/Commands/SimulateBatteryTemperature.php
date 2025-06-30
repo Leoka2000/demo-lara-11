@@ -22,7 +22,7 @@ class SimulateBatteryTemperature extends Command
                 'field1' => $temperature,
             ]);
 
-            // Broadcast via Reverb
+
             BatteryTemperature::dispatch($temperature);
 
             $this->info("Temperature sent: $temperature");

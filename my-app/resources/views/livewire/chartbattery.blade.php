@@ -30,7 +30,18 @@ public function updateChargeLevel($event)
     const batteryChartOptions = {
         chart: {
             height: 200,
-            type: "radialBar"
+            type: "radialBar",
+            toolbar: {
+        show: true,
+        tools: {
+            download: true,
+            selection: true,
+            zoom: true,
+            zoomin: true,
+            zoomout: true,
+            pan: true,
+            reset: true,
+        }}
         },
         series: [getInitialCharge()],
         plotOptions: {
@@ -44,8 +55,8 @@ public function updateChargeLevel($event)
                     name: {
                         offsetY: -10,
                         show: true,
-                        color: "#888",
-                        fontSize: "15px"
+                        color: "#4b5563",
+                        fontSize: "13px"
                     },
                     value: {
                         color: "#111",

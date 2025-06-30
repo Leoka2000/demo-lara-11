@@ -8,7 +8,7 @@ new class extends Component {
 ?>
 
 <div wire:ignore>
-    <div id="historical_data" class="h-[350px]"></div>
+    <div id="historical_data"></div>
 </div>
 
 <script>
@@ -30,7 +30,15 @@ new class extends Component {
             chart: {
                 height: 350,
                 type: 'line',
-                zoom: { enabled: false }
+                tools: {
+            download: true,
+            selection: true,
+            zoom: true,
+            zoomin: true,
+            zoomout: true,
+            pan: true,
+            reset: true,
+        },
             },
             dataLabels: { enabled: false },
             stroke: {
@@ -64,7 +72,7 @@ new class extends Component {
 
         historicalDataChart.render();
 
-        // Helper to keep only last N points
+
         function pushAndTrim(array, value) {
             array.push(value);
             if (array.length > maxPoints) array.shift();

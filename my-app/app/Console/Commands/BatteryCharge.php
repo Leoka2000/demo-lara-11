@@ -44,7 +44,7 @@ class BatteryCharge extends Command
             $this->info("Charge: $chargeLevel");
 
             $chargeLevel -= 1;
-            sleep(5); // FIX LATER
+            sleep(2); // FIX LATER
 
         }
 

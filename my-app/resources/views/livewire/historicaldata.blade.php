@@ -101,15 +101,18 @@ new class extends Component {
                     ]);
                 });
 
-            Echo.channel('battery.voltage')
-                .listen('BatteryVoltage', (e) => {
-                    chartData.voltage = pushAndTrim(chartData.voltage, parseFloat(e.voltage));
-                    historicalDataChart.updateSeries([
-                        { name: "Temperature", data: chartData.temperature },
-                        { name: "Voltage", data: chartData.voltage },
-                        { name: "Battery charge", data: chartData.charge }
-                    ]);
-                });
+                Echo.channel('battery.voltage')
+    .listen('BatteryVoltage', (e) => {
+        // Round voltage to 2 decimals before pushing
+        const roundedVoltage = parseFloat(parseFloat(e.voltage).toFixed(2));
+        chartData.voltage = pushAndTrim(chartData.voltage, roundedVoltage);
+
+        historicalDataChart.updateSeries([
+            { name: "Temperature", data: chartData.temperature },
+            { name: "Voltage", data: chartData.voltage },
+            { name: "Battery charge", data: chartData.charge }
+        ]);
+    });
 
             Echo.channel('battery.temperature')
                 .listen('BatteryTemperature', (e) => {

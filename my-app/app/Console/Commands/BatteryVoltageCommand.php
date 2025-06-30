@@ -1,50 +1,71 @@
 <?php
 
-namespace App\Events;
+namespace App\Console\Commands;
 
-use Illuminate\Broadcasting\Channel;
-use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
-use Illuminate\Foundation\Events\Dispatchable;
-use Illuminate\Queue\SerializesModels;
+use App\Events\BatteryVoltage;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Console\Command;
 
-class BatteryVoltage implements ShouldBroadcast
+class BatteryVoltageCommand extends Command
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    public float $voltage;
-
     /**
-     * Create a new event instance.
-     */
-    public function __construct(float $voltage)
-    {
-        $this->voltage = $voltage;
-    }
-
-    /**
-     * Get the channels the event should broadcast on.
+     * The name and signature of the console command.
      *
-     * @return array<int, \Illuminate\Broadcasting\Channel>
+     * @var string
      */
-    public function broadcastOn(): array
-    {
-        return [
-            new Channel('battery.voltage'),
-        ];
-    }
+    protected $signature = 'app:simulate-voltage';
 
     /**
-     * Get the data to broadcast.
+     * The console command description.
      *
-     * @return array<string, float>
+     * @var string
      */
-    public function broadcastWith(): array
+    protected $description = 'Simulate battery voltage fluctuation and send to ThingSpeak and broadcast';
+
+    /**
+     * Execute the console command.
+     */
+    public function handle()
     {
-        return [
-            'voltage' => $this->voltage,
-        ];
+        $voltage = 12.0;         // Start at full charge
+        $minVoltage = 3.5;
+        $maxVoltage = 12.0;
+        $direction = -1;         // Discharging initially
+        $step = 0.1;
+
+        $this->info("Starting voltage simulation...");
+
+        while (true) {
+            // Clamp voltage within bounds
+            $voltage = max($minVoltage, min($maxVoltage, $voltage));
+
+            // Send to ThingSpeak
+            $response = Http::get('https://api.thingspeak.com/update', [
+                'api_key' => 'XSFZL9M343SO37JF',
+                'field1' => $voltage,
+            ]);
+
+            // Broadcast via Reverb
+            BatteryVoltage::dispatch($voltage);
+
+            $this->info("Voltage: {$voltage}V");
+
+            // Adjust voltage
+            $randomJitter = mt_rand(-5, 5) / 100.0; // ±0.05V jitter
+            $voltage += ($step * $direction) + $randomJitter;
+
+            // Switch direction at bounds
+            if ($voltage <= $minVoltage) {
+                $direction = 1; // start charging
+                $this->warn("Voltage low — starting recharge...");
+            } elseif ($voltage >= $maxVoltage) {
+                $direction = -1; // start discharging
+                $this->warn("Voltage high — starting discharge...");
+            }
+
+            sleep(5); // simulate delay between updates
+        }
+
+        return Command::SUCCESS;
     }
 }

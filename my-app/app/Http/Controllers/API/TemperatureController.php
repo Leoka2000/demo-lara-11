@@ -12,8 +12,8 @@ class TemperatureController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'temperature' => 'required|numeric',
-            'timestamp' => 'required|integer'
+            'temperature' => 'required',
+            'timestamp' => 'required'
         ]);
         Log::info('TemperatureController received data', $validated);
 

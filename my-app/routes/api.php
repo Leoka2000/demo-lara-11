@@ -1,10 +1,16 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\API\TemperatureController;
-
 // For testing
 
 
-// For real data from Python script
-Route::post('temperature', [TemperatureController::class, 'store']);
+
+use App\Http\Controllers\API\TemperatureController;
+
+Route::post('/temperature', [TemperatureController::class, 'store']);
+Route::get('/temperature', function () {
+    return response()->json([
+        'status' => 'ok',
+        'message' => 'This endpoint only accepts POST requests for temperature data.'
+    ]);
+});

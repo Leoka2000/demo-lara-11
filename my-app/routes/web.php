@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 use Illuminate\Support\Facades\Broadcast;
+use App\Http\Controllers\API\TemperatureController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -11,6 +12,8 @@ Route::get('/', function () {
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
+
+Route::post('/api/temperature', [TemperatureController::class, 'store']);
 
 Route::middleware(['auth'])->group(function () {
     Broadcast::routes();

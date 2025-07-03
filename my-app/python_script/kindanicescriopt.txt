@@ -1,0 +1,252 @@
+import asyncio
+import struct
+from bleak import BleakScanner, BleakClient
+from datetime import datetime
+
+class BLEDataReader:
+    def __init__(self, device_name=None, device_address=None):
+        self.device_name = device_name
+        self.device_address = device_address
+        self.client = None
+
+    async def scan_devices(self):
+        """Scan for BLE devices and display them"""
+        print("Scanning for BLE devices...")
+        devices = await BleakScanner.discover(timeout=10.0)
+
+        print(f"\nFound {len(devices)} devices:")
+        for i, device in enumerate(devices):
+            print(f"{i+1}. {device.name or 'Unknown'} - {device.address}")
+
+        return devices
+
+    async def connect_to_device(self):
+        """Connect to the BLE device"""
+        if self.device_address:
+            print(f"Connecting to device: {self.device_address}")
+            self.client = BleakClient(self.device_address)
+            await self.client.connect()
+            print("Connected successfully!")
+            return True
+        else:
+            print("No device address specified")
+            return False
+
+    async def discover_services(self):
+        """Discover services and characteristics of the connected device"""
+        if not self.client or not self.client.is_connected:
+            print("Not connected to any device")
+            return
+
+        print("\nDiscovering services...")
+        services = await self.client.get_services()
+
+        for service in services:
+            print(f"\nService: {service.uuid}")
+            for char in service.characteristics:
+                print(f"  Characteristic: {char.uuid}")
+                print(f"    Properties: {char.properties}")
+
+                # Try to read the characteristic if it's readable
+                if "read" in char.properties:
+                    try:
+                        value = await self.client.read_gatt_char(char.uuid)
+                        print(f"    Value: {value.hex()}")
+                    except Exception as e:
+                        print(f"    Could not read: {e}")
+
+    def parse_hex_data(self, hex_string):
+        """Parse the hexadecimal data to extract timestamp and temperature"""
+        # Remove '0x' prefix if present
+        if hex_string.startswith('0x'):
+            hex_string = hex_string[2:]
+
+        # Ensure we have at least 12 characters (8 for timestamp + 4 for temperature)
+        if len(hex_string) < 12:
+            print(f"Invalid data length: {len(hex_string)} characters")
+            return None, None
+
+        # Extract timestamp (first 8 characters) and temperature (next 4 characters)
+        timestamp_hex = hex_string[:8]
+        temperature_hex = hex_string[8:12]
+
+        # Convert to decimal
+        timestamp_decimal = int(timestamp_hex, 16)
+        temperature_decimal = int(temperature_hex, 16)
+
+        return timestamp_decimal, temperature_decimal
+
+    def format_timestamp(self, timestamp):
+        """Convert timestamp to readable format (assuming Unix timestamp)"""
+        try:
+            # Try as Unix timestamp
+            dt = datetime.fromtimestamp(timestamp)
+            return dt.strftime("%Y-%m-%d %H:%M:%S")
+        except (ValueError, OSError):
+            # If not a valid Unix timestamp, return as is
+            return f"Raw timestamp: {timestamp}"
+
+    def format_temperature(self, temp_raw):
+        """Format temperature (you may need to adjust based on your device's format)"""
+        # Common temperature formats:
+        # Option 1: Direct decimal (e.g., 2501 = 25.01°C)
+        temp_celsius = temp_raw / 100.0
+
+        # Option 2: If it's in a different format, adjust accordingly
+        # temp_celsius = temp_raw / 10.0  # if 251 = 25.1°C
+        # temp_celsius = temp_raw  # if already in correct format
+
+        return temp_celsius
+
+    async def read_characteristic_continuously(self, characteristic_uuid, interval=1.0):
+        """Continuously read data from a specific characteristic"""
+        if not self.client or not self.client.is_connected:
+            print("Not connected to any device")
+            return
+
+        print(f"\nReading data from characteristic: {characteristic_uuid}")
+        print("Press Ctrl+C to stop...")
+
+        try:
+            while True:
+                try:
+                    # Read the characteristic
+                    data = await self.client.read_gatt_char(characteristic_uuid)
+                    hex_data = data.hex()
+
+                    print(f"\nRaw hex data: 0x{hex_data}")
+
+                    # Parse the data
+                    timestamp_dec, temp_dec = self.parse_hex_data(hex_data)
+
+                    if timestamp_dec is not None and temp_dec is not None:
+                        formatted_time = self.format_timestamp(timestamp_dec)
+                        formatted_temp = self.format_temperature(temp_dec)
+
+                        print(f"Timestamp: {timestamp_dec} -> {formatted_time}")
+                        print(f"Temperature: {temp_dec} -> {formatted_temp:.2f}°C")
+
+                    await asyncio.sleep(interval)
+
+                except Exception as e:
+                    print(f"Error reading characteristic: {e}")
+                    await asyncio.sleep(interval)
+
+        except KeyboardInterrupt:
+            print("\nStopping data reading...")
+
+    async def notification_handler(self, sender, data):
+        """Handle notifications from the BLE device"""
+        hex_data = data.hex()
+        print(f"\nNotification received: 0x{hex_data}")
+
+        # Parse the data
+        timestamp_dec, temp_dec = self.parse_hex_data(hex_data)
+
+        if timestamp_dec is not None and temp_dec is not None:
+            formatted_time = self.format_timestamp(timestamp_dec)
+            formatted_temp = self.format_temperature(temp_dec)
+
+            print(f"Timestamp: {timestamp_dec} -> {formatted_time}")
+            print(f"Temperature: {temp_dec} -> {formatted_temp:.2f}°C")
+
+    async def setup_notifications(self, characteristic_uuid):
+        """Setup notifications for a characteristic"""
+        if not self.client or not self.client.is_connected:
+            print("Not connected to any device")
+            return
+
+        try:
+            await self.client.start_notify(characteristic_uuid, self.notification_handler)
+            print(f"Notifications enabled for {characteristic_uuid}")
+            print("Press Ctrl+C to stop...")
+
+            # Keep the script running to receive notifications
+            while True:
+                await asyncio.sleep(1)
+
+        except KeyboardInterrupt:
+            print("\nStopping notifications...")
+            await self.client.stop_notify(characteristic_uuid)
+
+    async def disconnect(self):
+        """Disconnect from the BLE device"""
+        if self.client and self.client.is_connected:
+            await self.client.disconnect()
+            print("Disconnected from device")
+
+async def main():
+    # Initialize the BLE reader
+    reader = BLEDataReader()
+
+    try:
+        # Step 1: Scan for devices
+        devices = await reader.scan_devices()
+
+        if not devices:
+            print("No devices found")
+            return
+
+        # Step 2: Select a device (you can modify this to auto-select your device)
+        print("\nSelect a device by number:")
+        try:
+            choice = int(input("Enter device number: ")) - 1
+            if 0 <= choice < len(devices):
+                selected_device = devices[choice]
+                reader.device_address = selected_device.address
+                print(f"Selected: {selected_device.name or 'Unknown'} - {selected_device.address}")
+            else:
+                print("Invalid choice")
+                return
+        except ValueError:
+            print("Invalid input")
+            return
+
+        # Step 3: Connect to the device
+        if await reader.connect_to_device():
+            # Step 4: Discover services and characteristics
+            await reader.discover_services()
+
+            # Step 5: Choose how to read data
+            print("\nChoose reading method:")
+            print("1. Read from specific characteristic continuously")
+            print("2. Setup notifications (if supported)")
+
+            method = input("Enter choice (1 or 2): ")
+
+            if method == "1":
+                char_uuid = input("Enter characteristic UUID: ")
+                interval = float(input("Enter reading interval in seconds (default 1.0): ") or 1.0)
+                await reader.read_characteristic_continuously(char_uuid, interval)
+            elif method == "2":
+                char_uuid = input("Enter characteristic UUID for notifications: ")
+                await reader.setup_notifications(char_uuid)
+            else:
+                print("Invalid choice")
+
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        await reader.disconnect()
+
+if __name__ == "__main__":
+    # Test the hex parsing function with your example
+    reader = BLEDataReader()
+
+    # Test with your example data
+    test_hex = "0x6865256101E5000000000000000000000000000000000000000000000000"
+    print("Testing hex parsing:")
+    print(f"Input: {test_hex}")
+
+    timestamp, temperature = reader.parse_hex_data(test_hex)
+    if timestamp and temperature:
+        print(f"Timestamp (decimal): {timestamp}")
+        print(f"Temperature (decimal): {temperature}")
+        print(f"Formatted timestamp: {reader.format_timestamp(timestamp)}")
+        print(f"Formatted temperature: {reader.format_temperature(temperature):.2f}°C")
+
+    print("\n" + "="*50)
+    print("Starting BLE connection...")
+
+    # Run the main program
+    asyncio.run(main())

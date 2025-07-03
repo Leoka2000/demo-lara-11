@@ -18,7 +18,7 @@ async def parse_ble_data(data: bytearray):
 async def send_to_laravel(websocket, timestamp, temperature):
     """Send data to Laravel via WebSocket"""
     payload = json.dumps({
-        "event": "temperature.update.bluetooth",
+        "event": "battery.temperature",
         "data": {
             "timestamp": timestamp,
             "temperature": temperature

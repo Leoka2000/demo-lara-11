@@ -2,25 +2,29 @@
 
 namespace App\Http\Controllers\API;
 
-namespace App\Http\Controllers\API;
-
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\JsonResponse;
+use App\Events\BatteryTemperature;
 use Illuminate\Http\Request;
 
 class TemperatureController extends Controller
 {
-    public function getDummy(Request $request)
+    public function store(Request $request)
     {
-        $temperature = $request->query('temperature');
-        $timestamp = $request->query('timestamp');
+        $validated = $request->validate([
+            'temperature' => 'required|numeric',
+            'timestamp' => 'required|integer'
+        ]);
+        Log::info('TemperatureController received data', $validated);
+
+        event(new BatteryTemperature(
+            $validated['temperature'],
+            $validated['timestamp']
+        ));
 
         return response()->json([
-            'temperature' => $temperature,
-            'timestamp' => $timestamp,
-            'message' => 'Received from BLE',
+            'status' => 'success',
+            'message' => 'Temperature data broadcasted'
         ]);
     }
-
-    // Keep your existing store() if needed for real POST later
 }

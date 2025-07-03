@@ -1,32 +1,21 @@
 import requests
-import random
 import time
 
 LARAVEL_API_URL = "http://127.0.0.1:8000/api/temperature"
 
-def generate_dummy_temperature():
-    return round(random.uniform(20.0, 40.0), 2)
-
-def send_temperature():
-    temp = generate_dummy_temperature()
-    payload = {"temperature": temp}
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-    }
-
+def get_temperature():
     try:
-        response = requests.post(LARAVEL_API_URL, json=payload, headers=headers)
-
+        response = requests.get(LARAVEL_API_URL)
         if response.status_code == 200:
-            print(f"✅ Sent temperature: {temp}°C")
+            data = response.json()
+            print(f"🌡️ Dummy temperature received: {data['temperature']}°C")
         else:
-            print(f"❌ Failed to send temperature. Status: {response.status_code}, Message: {response.text}")
+            print(f"❌ Failed to get temperature. Status: {response.status_code}")
     except Exception as e:
         print(f"❗ Error: {e}")
 
 if __name__ == "__main__":
-    print("📡 Starting dummy temperature sender...")
+    print("📡 Starting dummy temperature fetcher...")
     while True:
-        send_temperature()
+        get_temperature()
         time.sleep(3)

@@ -2,22 +2,23 @@
 
 namespace App\Http\Controllers\API;
 
+namespace App\Http\Controllers\API;
+
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class TemperatureController extends Controller
 {
-    public function store(Request $request)
+    public function getDummy(): JsonResponse
     {
-        $validated = $request->validate([
-            'temperature' => 'required|numeric',
-        ]);
+        // Generate dummy temperature between 20 and 40
+        $temperature = round(mt_rand(2000, 4000) / 100, 2);
 
-        // Store or process temperature here
-        // For testing, just return JSON response:
         return response()->json([
-            'message' => 'Temperature stored successfully',
-            'temperature' => $validated['temperature'],
+            'temperature' => $temperature,
+            'message' => 'Dummy temperature fetched successfully',
         ]);
     }
+
+    // Keep your existing store() if needed for real POST later
 }

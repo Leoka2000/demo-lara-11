@@ -42,8 +42,8 @@
                     </div>
                 </div>
             </div>
-            <div>
-                <div id="historical_data"></div>
+            <div class="h-[40rem]">
+                <div class="h-full" id="historical_data"></div>
             </div>
         </div>
     </div>
@@ -258,122 +258,158 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-        const maxPoints = 20;
+    const maxPoints = 20;
+    // Initialize data array for dynamic chart
+    let data = [];
+    let lastDate = new Date().getTime();
+    const XAXISRANGE = 60000; // 60 seconds range
 
-        // Example initial temperature data and timestamps (replace with real timestamps)
-        const chartData = {
-            temperature: [45, 52, 38, 24, 33, 26, 21, 20, 6, 8, 15, 10],
-            timestamps: [
-                '2025-07-01 10:00', '2025-07-01 10:05', '2025-07-01 10:10', '2025-07-01 10:15',
-                '2025-07-01 10:20', '2025-07-01 10:25', '2025-07-01 10:30', '2025-07-01 10:35',
-                '2025-07-01 10:40', '2025-07-01 10:45', '2025-07-01 10:50', '2025-07-01 10:55'
-            ]
+    // Function to generate new data point
+    function getNewSeries(baseval, yrange) {
+        const newDate = baseval + 1000;
+        lastDate = newDate;
+
+        return {
+            x: newDate,
+            y: Math.floor(Math.random() * (yrange.max - yrange.min + 1)) + yrange.min
         };
+    }
 
-        const historicalDataChart = new ApexCharts(document.querySelector("#historical_data"), {
-            series: [
-                { name: "Temperature", data: [...chartData.temperature] }
-            ],
-            chart: {
-                type: 'line',
-                toolbar: {
-                    tools: {
-                        download: true,
-                        selection: true,
-                        zoom: true,
-                        zoomin: true,
-                        zoomout: true,
-                        pan: true,
-                        reset: true,
-                    }
+    // Initialize with empty data
+    for (let i = 0; i < maxPoints; i++) {
+        data.push(getNewSeries(lastDate, { min: 10, max: 90 }));
+    }
+
+    // Initialize chart with the options you provided
+    var chart = new ApexCharts(document.querySelector("#historical_data"), {
+        series: [{
+            data: data.slice()
+        }],
+        chart: {
+            id: 'realtime',
+            height: 500,
+            type: 'line',
+            animations: {
+                enabled: true,
+                easing: 'linear',
+                dynamicAnimation: {
+                    speed: 1000
                 }
             },
-            dataLabels: { enabled: false },
-            stroke: {
-                width: 3,
-                curve: 'smooth'
+            toolbar: {
+                show: false
             },
+            zoom: {
+                enabled: false
+            }
+        },
+        dataLabels: {
+            enabled: false
+        },
+        stroke: {
+            curve: 'smooth',
+            width: 3
+        },
+        title: {
+            text: 'Dynamic Temperature Data',
+            align: 'left',
+            style: {
+                color: '#374151',
+                fontSize: '16px',
+                fontWeight: 'thin'
+            }
+        },
+        markers: {
+            size: 0
+        },
+        xaxis: {
+            type: 'datetime',
+            range: XAXISRANGE,
             title: {
-                text: 'Historical Temperature Data',
-                align: 'left',
+                text: 'Timestamp',
                 style: {
                     color: '#374151',
-                    fontSize: '16px',
-                    fontWeight: 'thin'
+                    fontWeight: 'bold',
+                    fontSize: '14px',
                 }
-            },
-            markers: {
-                size: 0,
-                hover: { sizeOffset: 6 }
-            },
-            xaxis: {
-                categories: [...chartData.timestamps],
-                title: {
-                    text: 'Timestamp',
-                    style: {
-                        color: '#374151',
-                        fontWeight: 'bold',
-                        fontSize: '14px',
-                    }
-                },
-                labels: {
-                    rotate: -45,
-                    datetimeUTC: false
-                }
-            },
-            yaxis: {
-                title: {
-                    text: 'Temperature (°C)',
-                    style: {
-                        color: '#374151',
-                        fontWeight: 'bold',
-                        fontSize: '14px',
-                    }
-                },
-                min: 0
-            },
-            tooltip: {
-                y: {
-                    formatter: val => val + " °C"
-                }
-            },
-            grid: {
-                borderColor: '#f1f1f1'
             }
-        });
-
-        historicalDataChart.render();
-
-        function pushAndTrim(array, value) {
-            array.push(value);
-            if (array.length > maxPoints) array.shift();
-            return array;
-        }
-
-        // Update chart with live data via Laravel Echo, only temperature updates
-        if (typeof Echo !== 'undefined') {
-            Echo.channel('battery.temperature')
-                .listen('BatteryTemperature', (e) => {
-                    chartData.temperature = pushAndTrim(chartData.temperature, e.temperature);
-
-                    // Optionally, update timestamps if available
-                    // For now just push dummy timestamp or use e.timestamp if available
-                    const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
-                    chartData.timestamps = pushAndTrim(chartData.timestamps, now);
-
-                    historicalDataChart.updateOptions({
-                        xaxis: {
-                            categories: [...chartData.timestamps]
-                        }
-                    });
-
-                    historicalDataChart.updateSeries([
-                        { name: "Temperature", data: chartData.temperature }
-                    ]);
-                });
-        } else {
-            console.warn("Laravel Echo is not available.");
+        },
+        yaxis: {
+            max: 100,
+            title: {
+                text: 'Temperature (°C)',
+                style: {
+                    color: '#374151',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                }
+            },
+            min: 0
+        },
+        legend: {
+            show: false
+        },
+        tooltip: {
+            y: {
+                formatter: function(val) {
+                    return val + " °C";
+                }
+            }
+        },
+        grid: {
+            borderColor: '#f1f1f1'
         }
     });
+
+    chart.render();
+
+    // Update chart with real data when Echo receives a broadcast
+    if (typeof Echo !== 'undefined') {
+        Echo.channel('battery.temperature')
+            .listen('BatteryTemperature', (e) => {
+                const temp = e.temperature;
+                const time = e.timestamp * 1000; // Convert UNIX timestamp to milliseconds
+
+                // Push new data point and trim if needed
+                data.push({
+                    x: time,
+                    y: temp
+                });
+
+                if (data.length > maxPoints) {
+                    data.shift();
+                }
+
+                // Update chart
+                chart.updateSeries([{
+                    data: data
+                }]);
+            });
+    } else {
+        console.warn("Laravel Echo is not available.");
+
+        // Fallback to random data if Echo is not available (for testing)
+        var interval = window.setInterval(function () {
+            getNewSeries(lastDate, {
+                min: 10,
+                max: 90
+            });
+
+            data.push(getNewSeries(lastDate, {
+                min: 10,
+                max: 90
+            }));
+
+            if (data.length > maxPoints) {
+                data.shift();
+            }
+
+            chart.updateSeries([{
+                data: data
+            }]);
+        }, 1000);
+    }
+});
     </script>
+
 </x-layouts.app>

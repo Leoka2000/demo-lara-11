@@ -84,7 +84,7 @@
     // Initialize Echo for WebSockets
 
 
-    // Log messages to the WebSocket log area
+    // important!!
     function logToConsole(message) {
         const logEntry = document.createElement('div');
         logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
@@ -117,7 +117,7 @@
 
             bluetoothDevice = await navigator.bluetooth.requestDevice({
                 filters: [{ name: 'LeoPayload' }],
-                optionalServices: ['12345678-1234-1234-1234-1234567890ab'] // Your service UUID
+                optionalServices: ['12345678-1234-1234-1234-1234567890ab'] // SERVICE UUID
             });
 
             bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
@@ -128,7 +128,7 @@
             const server = await bluetoothDevice.gatt.connect();
             logToConsole('Connected to GATT server');
 
-            const service = await server.getPrimaryService('12345678-1234-1234-1234-1234567890ab'); // Your service UUID
+            const service = await server.getPrimaryService('12345678-1234-1234-1234-1234567890ab'); // SERVICE UUID
             logToConsole('Service found');
 
             characteristic = await service.getCharacteristic('abcdefab-1234-5678-9abc-def123456789'); // Your characteristic UUID
@@ -194,25 +194,6 @@
             return;
         }
 
-        try {
-            // Using axios to send data (alternative to Echo)
-            axios.post('/api/temperature', {
-                timestamp,
-                temperature
-            })
-            .then(response => {
-                logToConsole('Data sent to server successfully');
-            })
-            .catch(error => {
-                logToConsole(`Error sending data: ${error.message}`);
-            });
-
-            // Alternatively, you could use Echo.connector.socket.send() directly
-            // but the above method is more standard with Laravel
-
-        } catch (error) {
-            logToConsole(`WebSocket error: ${error}`);
-        }
     }
 
     // Disconnect from Bluetooth device

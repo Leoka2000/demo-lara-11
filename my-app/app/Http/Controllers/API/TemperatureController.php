@@ -11,20 +11,16 @@ class TemperatureController extends Controller
 {
     public function store(Request $request)
     {
+        if ($request->bearerToken() !== env('API_TOKEN')) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
         $validated = $request->validate([
-            'temperature' => 'required',
-            'timestamp' => 'required'
+            'timestamp' => 'required|integer',
+            'temperature' => 'required|integer',
         ]);
-        Log::info('TemperatureController received data', $validated);
 
-        event(new BatteryTemperature(
-            $validated['temperature'],
-            $validated['timestamp']
-        ));
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Temperature data broadcasted'
-        ]);
+        // Save to DB or handle data
+        return response()->json(['success' => true]);
     }
 }

@@ -14,6 +14,7 @@
 <!-- ApexCharts JS -->
 <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<meta name="csrf-token" content="{{ csrf_token() }}">
 
 
 @vite(['resources/css/app.css', 'resources/js/app.js'])

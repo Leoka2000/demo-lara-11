@@ -3,122 +3,244 @@
 use Livewire\Volt\Component;
 use Livewire\Attributes\On;
 
-new class extends Component {
-    public int $temperature = 0;
-    public string $lastUpdated = 'Never';
 
-    #[On('echo:temperature-updates,TemperatureUpdated')]
-    public function updateTemperature($event)
+
+new class extends Component {
+    public float $temperature = 0;
+    public int $timestamp = 0;
+
+    #[On('echo:battery.temperature,BatteryTemperature')]
+    public function updateTemperature(array $event)
     {
         $this->temperature = $event['temperature'];
-        $this->lastUpdated = now()->diffForHumans();
-
-        // Dispatch Livewire event for the chart
-        $this->dispatch('battery.temperature', temperature: $this->temperature);
+        $this->timestamp = $event['timestamp'];
     }
 };
 ?>
 
 <div>
-    <div class="relative p-1">
-        <span
-            class="text-xs absolute top-2 left-2 inline-flex items-center px-2.5 py-0.5 rounded-sm bg-yellow-100 text-yellow-800 font-medium me-2 dark:bg-gray-700 dark:text-yellow-300 border border-yellow-300">
-            <svg class="w-4 h-4 me-1.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M18.122 17.645a7.185 7.185 0 0 1-2.656 2.495 7.06 7.06 0 0 1-3.52.853 6.617 6.617 0 0 1-3.306-.718 6.73 6.73 0 0 1-2.54-2.266c-2.672-4.57.287-8.846.887-9.668A4.448 4.448 0 0 0 8.07 6.31 4.49 4.49 0 0 0 7.997 4c1.284.965 6.43 3.258 5.525 10.631 1.496-1.136 2.7-3.046 2.846-6.216 1.43 1.061 3.985 5.462 1.754 9.23Z" />
-            </svg>
-            {{ $lastUpdated }}
-        </span>
+    <div class="relative p-4">
+        <button id="connectBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+            Connect to Bluetooth Device
+        </button>
 
-        <div id="chart-temperature" wire:ignore></div>
-        <span id="temp-value" style="display: none;">{{ $temperature }}</span>
+        <div class="mt-4 space-y-2">
+            <div class="p-4 bg-gray-100 rounded">
+                <h3 class="font-bold">Device Status:</h3>
+                <p id="deviceStatus">Not connected</p>
+            </div>
+
+            <div class="p-4 bg-gray-100 rounded">
+                <h3 class="font-bold">Temperature Data:</h3>
+                <p>Livewire Data: {{ $temperature }}°C at {{ date('Y-m-d H:i:s', $timestamp) }}</p>
+                <p id="temperatureData">No data received yet</p>
+            </div>
+
+            <div class="p-4 bg-gray-100 rounded">
+                <h3 class="font-bold">WebSocket Log:</h3>
+                <div id="wsLog" class="h-32 overflow-y-auto bg-white p-2 rounded text-sm font-mono"></div>
+            </div>
+        </div>
     </div>
 </div>
 
-
 <script>
-    document.addEventListener('livewire:init', () => {
-        let lastTemp = null;
-        const chart = initializeChart();
+    document.addEventListener('DOMContentLoaded', function() {
+    const connectBtn = document.getElementById('connectBtn');
+    const deviceStatus = document.getElementById('deviceStatus');
+    const temperatureData = document.getElementById('temperatureData');
+    const wsLog = document.getElementById('wsLog');
 
-        function initializeChart() {
-            const options = {
-                chart: {
-                    height: 200,
-                    type: "radialBar",
-                    toolbar: {
-                        show: true,
-                        tools: {
-                            download: true,
-                            selection: true,
-                            zoom: true,
-                            zoomin: true,
-                            zoomout: true,
-                            pan: true,
-                            reset: true,
-                        }
-                    }
-                },
-                series: [getCurrentTemp()],
-                plotOptions: {
-                    radialBar: {
-                        hollow: { margin: 15, size: "70%" },
-                        dataLabels: {
-                            showOn: "always",
-                            name: {
-                                offsetY: -10,
-                                show: true,
-                                color: "#4b5563",
-                                fontSize: "13px"
-                            },
-                            value: {
-                                color: "#111",
-                                fontSize: "30px",
-                                show: true,
-                                formatter: (val) => `${val}°C`
-                            }
-                        }
-                    }
-                },
-                fill: {
-                    type: 'gradient',
-                    gradient: {
-                        shade: 'dark',
-                        type: 'horizontal',
-                        shadeIntensity: 0.5,
-                        gradientToColors: ['#f59e0b', '#ef4444'],
-                        inverseColors: true,
-                        opacityFrom: 1,
-                        opacityTo: 1,
-                        stops: [0, 100]
-                    }
-                },
-                stroke: { lineCap: "round" },
-                labels: ["Temperature °C"]
-            };
+    let bluetoothDevice = null;
+    let characteristic = null;
+    let echo = null;
 
-            return new ApexCharts(document.querySelector("#chart-temperature"), options);
-            chart.render();
-        }
-
-        function getCurrentTemp() {
-            const el = document.getElementById('temp-value');
-            return el ? parseInt(el.textContent) || 0 : 0;
-        }
-
-        // Listen for Livewire events
-        Livewire.on('battery.temperature', (temp) => {
-            chart.updateSeries([temp.temperature]);
+    // Initialize Echo for WebSockets
+    function initializeEcho() {
+        window.Echo = new Echo({
+            broadcaster: 'reverb',
+            key: 'kyvkshzfjpzfeiv0y4et', // Your Reverb key
+            wsHost: window.location.hostname,
+            wsPort: 8080,
+            forceTLS: false,
+            enabledTransports: ['ws', 'wss'],
         });
 
-        // Fallback polling
-        setInterval(() => {
-            const newTemp = getCurrentTemp();
-            if (newTemp !== lastTemp) {
-                chart.updateSeries([newTemp]);
-                lastTemp = newTemp;
+        logToConsole('Echo initialized');
+
+        // Listen for temperature updates (optional, if you want to confirm the data was received by the server)
+        window.Echo.channel('battery.temperature')
+            .listen('BatteryTemperature', (data) => {
+                logToConsole(`Received confirmation from server: ${data.temperature}°C at ${new Date(data.timestamp * 1000).toLocaleString()}`);
+            });
+    }
+
+    // Log messages to the WebSocket log area
+    function logToConsole(message) {
+        const logEntry = document.createElement('div');
+        logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        wsLog.appendChild(logEntry);
+        wsLog.scrollTop = wsLog.scrollHeight;
+    }
+
+    // Parse BLE data from hexadecimal to timestamp and temperature
+    function parseBleData(data) {
+        // Convert ArrayBuffer to hex string
+        const hexArray = Array.from(new Uint8Array(data)).map(b => b.toString(16).padStart(2, '0'));
+        const hexStr = hexArray.join('');
+
+        // Extract timestamp (first 8 chars) and temperature (next 4 chars)
+        const timestampHex = hexStr.substring(0, 8);
+        const tempHex = hexStr.substring(8, 12);
+
+        // Convert to decimal
+        const timestamp = parseInt(timestampHex, 16);
+        const temperature = parseInt(tempHex, 16) / 10; // Divide by 10 for human-readable
+
+        return { timestamp, temperature };
+    }
+
+    // Connect to Bluetooth device
+    async function connectToBluetooth() {
+        try {
+            logToConsole('Requesting Bluetooth device...');
+            deviceStatus.textContent = 'Searching for device...';
+
+            bluetoothDevice = await navigator.bluetooth.requestDevice({
+                filters: [{ name: 'LeoPayload' }],
+                optionalServices: ['12345678-1234-1234-1234-1234567890ab'] // Your service UUID
+            });
+
+            bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
+
+            logToConsole(`Connecting to device: ${bluetoothDevice.name}`);
+            deviceStatus.textContent = `Connecting to ${bluetoothDevice.name}...`;
+
+            const server = await bluetoothDevice.gatt.connect();
+            logToConsole('Connected to GATT server');
+
+            const service = await server.getPrimaryService('12345678-1234-1234-1234-1234567890ab'); // Your service UUID
+            logToConsole('Service found');
+
+            characteristic = await service.getCharacteristic('abcdefab-1234-5678-9abc-def123456789'); // Your characteristic UUID
+            logToConsole('Characteristic found');
+
+            deviceStatus.textContent = `Connected to ${bluetoothDevice.name}`;
+            connectBtn.textContent = 'Disconnect';
+            connectBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            connectBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+
+            // Start notifications
+            await characteristic.startNotifications();
+            logToConsole('Notifications started');
+
+            characteristic.addEventListener('characteristicvaluechanged', handleNotifications);
+
+        } catch (error) {
+            logToConsole(`Error: ${error}`);
+            deviceStatus.textContent = `Error: ${error.message}`;
+        }
+    }
+
+    // Handle disconnection
+    function onDisconnected() {
+        logToConsole('Device disconnected');
+        deviceStatus.textContent = 'Disconnected';
+        connectBtn.textContent = 'Connect to Bluetooth Device';
+        connectBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
+        connectBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+
+        if (characteristic) {
+            characteristic.removeEventListener('characteristicvaluechanged', handleNotifications);
+            characteristic = null;
+        }
+
+        bluetoothDevice = null;
+    }
+
+    // Handle incoming notifications
+    function handleNotifications(event) {
+        const { timestamp, temperature } = parseBleData(event.target.value.buffer);
+
+        // Update UI
+        const date = new Date(timestamp * 1000);
+        temperatureData.textContent = `${temperature}°C at ${date.toLocaleString()}`;
+
+        logToConsole(`Received: ${temperature}°C at ${date.toLocaleString()}`);
+
+        // Send to Laravel via WebSocket
+        sendTemperatureToServer(timestamp, temperature);
+
+        // Dispatch Livewire event
+        Livewire.dispatch('temperature-updated', {
+            timestamp,
+            temperature
+        });
+    }
+
+    // Send temperature data to Laravel via WebSocket
+    function sendTemperatureToServer(timestamp, temperature) {
+        if (!window.Echo) {
+            logToConsole('Echo not initialized, cannot send data');
+            return;
+        }
+
+        try {
+            // Using axios to send data (alternative to Echo)
+            axios.post('/api/temperature', {
+                timestamp,
+                temperature
+            })
+            .then(response => {
+                logToConsole('Data sent to server successfully');
+            })
+            .catch(error => {
+                logToConsole(`Error sending data: ${error.message}`);
+            });
+
+            // Alternatively, you could use Echo.connector.socket.send() directly
+            // but the above method is more standard with Laravel
+
+        } catch (error) {
+            logToConsole(`WebSocket error: ${error}`);
+        }
+    }
+
+    // Disconnect from Bluetooth device
+    async function disconnectFromBluetooth() {
+        if (!bluetoothDevice) return;
+
+        try {
+            if (bluetoothDevice.gatt.connected) {
+                if (characteristic) {
+                    await characteristic.stopNotifications();
+                    characteristic.removeEventListener('characteristicvaluechanged', handleNotifications);
+                }
+                bluetoothDevice.gatt.disconnect();
             }
-        }, 100);
+            onDisconnected();
+        } catch (error) {
+            logToConsole(`Error disconnecting: ${error}`);
+        }
+    }
+
+    // Toggle connection
+    connectBtn.addEventListener('click', async function() {
+        if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+            await disconnectFromBluetooth();
+        } else {
+            await connectToBluetooth();
+        }
     });
+
+    // Initialize Echo when the page loads
+    initializeEcho();
+
+    // Check if Bluetooth is available
+    if (!navigator.bluetooth) {
+        deviceStatus.textContent = 'Web Bluetooth API is not supported in this browser';
+        connectBtn.disabled = true;
+        logToConsole('Web Bluetooth API not supported');
+    }
+});
 </script>

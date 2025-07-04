@@ -2,25 +2,29 @@
 
 namespace App\Http\Controllers\API;
 
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Events\BatteryTemperature;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use App\Models\Temperature;
 
 class TemperatureController extends Controller
 {
     public function store(Request $request)
     {
-        if ($request->bearerToken() !== env('API_TOKEN')) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
-
         $validated = $request->validate([
-            'timestamp' => 'required|integer',
-            'temperature' => 'required|integer',
+            'temperature' => 'required|numeric',
+            'timestamp'   => 'required|numeric'
         ]);
 
-        // Save to DB or handle data
-        return response()->json(['success' => true]);
+        // Optionally log
+        Log::info('Storing temperature data', $validated);
+
+        // Save to database
+        Temperature::create([
+            'temperature' => $validated['temperature'],
+            'timestamp'   => $validated['timestamp']
+        ]);
+
+        return response()->json(['message' => 'Temperature stored successfully']);
     }
 }

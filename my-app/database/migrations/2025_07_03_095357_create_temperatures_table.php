@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('temperatures', function (Blueprint $table) {
             $table->id();
+            $table->float('temperature');
+            $table->unsignedBigInteger('timestamp');
             $table->timestamps();
-            $table->float('value'); // temperature value
-
         });
     }
 

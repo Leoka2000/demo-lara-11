@@ -10,6 +10,7 @@ new class extends Component {
 public function updateChargeLevel($event)
 {
     $this->chargeLevel = $event['chargeLevel'];
+
 }
 };
 ?>
@@ -33,79 +34,8 @@ public function updateChargeLevel($event)
             2 minutes ago
         </span>
         <div id="chart-battery-percentage" wire:ignore></div>
-        <span id="charge-value" style="display: none;">{{ $chargeLevel }}</span>
+
     </div>
 </div>
 
-<script>
-    let lastCharge = null;
-
-    const getInitialCharge = () => {
-        const el = document.getElementById('charge-value');
-        return el ? parseInt(el.textContent) || 0 : 0;
-    };
-
-    const batteryChartOptions = {
-        chart: {
-            height: 200,
-            type: "radialBar",
-            toolbar: {
-        show: true,
-        tools: {
-            download: true,
-            selection: true,
-            zoom: true,
-            zoomin: true,
-            zoomout: true,
-            pan: true,
-            reset: true,
-        }}
-        },
-        series: [getInitialCharge()],
-        plotOptions: {
-            radialBar: {
-                hollow: {
-                    margin: 15,
-                    size: "70%"
-                },
-                dataLabels: {
-                    showOn: "always",
-                    name: {
-                        offsetY: -10,
-                        show: true,
-                        color: "#4b5563",
-                        fontSize: "13px"
-                    },
-                    value: {
-                        color: "#111",
-                        fontSize: "30px",
-                        show: true
-                    }
-                }
-            }
-        },
-        stroke: {
-            lineCap: "round",
-        },
-        labels: ["Battery Level"]
-    };
-
-    const batteryChart = new ApexCharts(
-        document.querySelector("#chart-battery-percentage"),
-        batteryChartOptions
-    );
-
-    batteryChart.render();
-
-    setInterval(() => {
-        const el = document.getElementById('charge-value');
-        if (!el) return;
-
-        const newCharge = parseInt(el.textContent);
-
-        if (newCharge !== lastCharge) {
-            batteryChart.updateSeries([newCharge]);
-            lastCharge = newCharge;
-        }
-    }, 200);
-</script>
+ó

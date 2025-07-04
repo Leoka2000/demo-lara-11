@@ -19,26 +19,26 @@ new class extends Component {
 ?>
 
 <div>
-    <div class="relative ">
-        <button id="connectBtn" class=" bg-blue-600 text-white rounded hover:bg-blue-700">
+    <div class="relative">
+        <button id="connectBtn" class=" bg-blue-600 text-xs text-white rounded hover:bg-blue-700">
             Connect to Bluetooth Device
         </button>
 
         <div class="">
-            <div class=" bg-gray-100 rounded">
-                <h3 class="font-bold">Device Status:</h3>
-                <p id="deviceStatus">Not connected</p>
+            <div class=" text-xs bg-gray-100 rounded">
+                <h3 class="font-bold text-xs">Device Status:</h3>
+                <p class="text-xs" id="deviceStatus">Not connected</p>
             </div>
 
-            <div class=" bg-gray-100 rounded">
-                <h3 class="font-bold">Temperature Data:</h3>
-                <p>Livewire Data: {{ $temperature }}°C at {{ date('Y-m-d H:i:s', $timestamp) }}</p>
-                <p id="temperatureData">No data received yet</p>
+            <div class=" text-xs bg-gray-100 rounded">
+                <h3 class=" text-xs font-bold">Temperature Data:</h3>
+
+                <p class="text-xs" id="temperatureData">No data received yet</p>
             </div>
 
-            <div class=" bg-gray-100 rounded">
-                <h3 class="font-bold">WebSocket Log:</h3>
-                <div id="wsLog" class=" overflow-y-auto bg-white p-2 rounded text-sm font-mono"></div>
+            <div class=" bg-gray-100 text-xs  rounded">
+                <h3 class="font-bold text-xs ">WebSocket Log:</h3>
+                <div id="wsLog" class=" overflow-y-auto bg-white  rounded text-xs font-mono"></div>
             </div>
         </div>
     </div>

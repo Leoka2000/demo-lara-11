@@ -19,26 +19,26 @@ new class extends Component {
 ?>
 
 <div>
-    <div class="relative p-4">
-        <button id="connectBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+    <div class="relative ">
+        <button id="connectBtn" class=" bg-blue-600 text-white rounded hover:bg-blue-700">
             Connect to Bluetooth Device
         </button>
 
-        <div class="mt-4 space-y-2">
-            <div class="p-4 bg-gray-100 rounded">
+        <div class="">
+            <div class=" bg-gray-100 rounded">
                 <h3 class="font-bold">Device Status:</h3>
                 <p id="deviceStatus">Not connected</p>
             </div>
 
-            <div class="p-4 bg-gray-100 rounded">
+            <div class=" bg-gray-100 rounded">
                 <h3 class="font-bold">Temperature Data:</h3>
                 <p>Livewire Data: {{ $temperature }}°C at {{ date('Y-m-d H:i:s', $timestamp) }}</p>
                 <p id="temperatureData">No data received yet</p>
             </div>
 
-            <div class="p-4 bg-gray-100 rounded">
+            <div class=" bg-gray-100 rounded">
                 <h3 class="font-bold">WebSocket Log:</h3>
-                <div id="wsLog" class="h-32 overflow-y-auto bg-white p-2 rounded text-sm font-mono"></div>
+                <div id="wsLog" class=" overflow-y-auto bg-white p-2 rounded text-sm font-mono"></div>
             </div>
         </div>
     </div>
